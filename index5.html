@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống bán vé giao thông công cộng</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        h1 { color: #2c3e50; margin-bottom: 20px; }
+        #reader { width: 100%; max-width: 500px; border: 2px solid #3498db; border-radius: 10px; overflow: hidden; background: white; }
+        #result { margin-top: 20px; width: 100%; max-width: 500px; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: none; }
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .label { font-weight: bold; color: #7f8c8d; }
+        .value { color: #2c3e50; text-align: right; }
+        .status-box { text-align: center; margin-top: 15px; padding: 15px; border-radius: 8px; font-size: 1.2em; font-weight: bold; }
+        .free { background-color: #2ecc71; color: white; }
+        .student { background-color: #3498db; color: white; }
+        .normal { background-color: #e67e22; color: white; }
+    </style>
+</head>
+<body>
+
+    <h1>Hệ thống bán vé giao thông công cộng</h1>
+    
+    <div id="reader"></div>
+
+    <div id="result">
+        <h3 style="text-align: center; color: #2980b9;">Thông tin hành khách</h3>
+        <div class="info-row"><span class="label">Họ và tên:</span> <span id="res-name" class="value"></span></div>
+        <div class="info-row"><span class="label">Số CCCD:</span> <span id="res-id" class="value"></span></div>
+        <div class="info-row"><span class="label">Ngày sinh:</span> <span id="res-dob" class="value"></span></div>
+        <div class="info-row"><span class="label">Tuổi:</span> <span id="res-age" class="value"></span></div>
+        
+        <div id="ticket-status" class="status-box"></div>
+        
+        <button onclick="resetScanner()" style="width: 100%; margin-top: 15px; padding: 10px; cursor: pointer; background: #95a5a6; border: none; color: white; border-radius: 5px;">Quét tiếp</button>
+    </div>
+
+    <script>
+        const html5QrCode = new Html5Qrcode("reader");
+        const qrConfig = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+        function onScanSuccess(decodedText, decodedResult) {
+            // Ngừng quét để xử lý dữ liệu
+            html5QrCode.stop();
+            processCCCDData(decodedText);
+        }
+
+        function processCCCDData(data) {
+            // Mẫu: SoCCCD||Name|DOB|Sex|Address|DOI||||
+            // Lưu ý: data từ CCCD thực tế thường dùng dấu | để phân tách các trường
+            const parts = data.split('|');
+            
+            if (parts.length < 5) {
+                alert("Dữ liệu QR không đúng định dạng CCCD!");
+                resetScanner();
+                return;
+            }
+
+            const soCCCD = parts[0];
+            const name = parts[2];
+            const dobStr = parts[3]; // Định dạng DDMMYYYY
+            
+            // Tính tuổi
+            const birthYear = parseInt(dobStr.substring(4, 8));
+            const currentYear = new Date().getFullYear();
+            const age = currentYear - birthYear;
+
+            // Hiển thị thông tin lên giao diện
+            document.getElementById('res-name').innerText = name;
+            document.getElementById('res-id').innerText = soCCCD;
+            document.getElementById('res-dob').innerText = dobStr.replace(/(\d{2})(\d{2})(\d{4})/, "$1/$2/$3");
+            document.getElementById('res-age').innerText = age + " tuổi";
+
+            const statusBox = document.getElementById('ticket-status');
+            let message = "";
+            let cssClass = "";
+
+            // LOGIC ĐIỀU KIỆN CỦA BẠN
+            if (age >= 60) {
+                message = "Vé Miễn cho Người già (0$)";
+                cssClass = "free";
+            } else if (age >= 10 && age <= 29) {
+                message = "Vé học sinh (3$)";
+                cssClass = "student";
+            } else {
+                message = "Vé người lớn (10$)";
+                cssClass = "normal";
+            }
+
+            statusBox.innerText = message;
+            statusBox.className = "status-box " + cssClass;
+            
+            document.getElementById('reader').style.display = 'none';
+            document.getElementById('result').style.display = 'block';
+        }
+
+        function resetScanner() {
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('reader').style.display = 'block';
+            startScanner();
+        }
+
+        function startScanner() {
+            html5QrCode.start({ facingMode: "environment" }, qrConfig, onScanSuccess);
+        }
+
+        // Bắt đầu ứng dụng
+        startScanner();
+    </script>
+</body>
+</html>
