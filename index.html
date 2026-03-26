@@ -12,10 +12,10 @@
         
         /* --- BRANDING HEADER --- */
         .brand-header { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #edf2f7; }
-        .brand-logo { width: 50px; height: 50px; object-fit: contain; }
-        .brand-name { font-size: 1.2rem; font-weight: 800; color: #2c5282; text-transform: uppercase; letter-spacing: 1px; }
+        .brand-logo { width: 60px; height: auto; object-fit: contain; } /* Cập nhật kích thước logo */
+        .brand-name { font-size: 1.2rem; font-weight: 800; color: #2c5282; text-transform: uppercase; letter-spacing: 0.5px; }
         
-        h1 { color: #1a365d; text-align: center; font-size: 1.4rem; margin-bottom: 20px; }
+        h1 { color: #1a365d; text-align: center; font-size: 1.4rem; margin-top: 0; margin-bottom: 20px; }
         
         /* Bộ đếm vé */
         .dashboard { display: flex; justify-content: space-around; background: #2d3748; color: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; }
@@ -63,7 +63,7 @@
 
     <div class="container">
         <div class="brand-header">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Logo_UIT_v2.png/600px-Logo_UIT_v2.png" alt="Logo UIT" class="brand-logo">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/3/38/Logo_UIT_updated.jpg" alt="Logo UIT" class="brand-logo">
             <div class="brand-name">Công Ty TNHH Vận tải UIT</div>
         </div>
 
@@ -124,7 +124,7 @@
             const parts = decodedText.split('|');
             
             if (parts.length < 7) {
-                alert("Mã QR không hợp lệ hoặc không đủ thông tin!");
+                alert("Mã QR không hợp lệ!");
                 resetScanner();
                 return;
             }
