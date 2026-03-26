@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ thống bán vé giao thông công cộng - Pro v2.0</title>
+    <title>Hệ thống bán vé giao thông công cộng - Pro v2.1</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         /* Giao diện chung */
         body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background-color: #eef2f3; display: flex; flex-direction: column; align-items: center; padding: 20px; }
         .container { width: 100%; max-width: 600px; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
         
-        /* --- BRANDING HEADER --- */
+        /* --- BRANDING HEADER (Main App UI) --- */
         .brand-header { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #edf2f7; }
-        .brand-logo { width: 60px; height: auto; object-fit: contain; } /* Cập nhật kích thước logo */
+        .brand-logo { width: 60px; height: auto; object-fit: contain; }
         .brand-name { font-size: 1.2rem; font-weight: 800; color: #2c5282; text-transform: uppercase; letter-spacing: 0.5px; }
         
         h1 { color: #1a365d; text-align: center; font-size: 1.4rem; margin-top: 0; margin-bottom: 20px; }
@@ -28,13 +28,33 @@
         /* Kết quả & Vé */
         #result-area { display: none; margin-top: 20px; }
         .ticket-box { border: 2px solid #2d3748; padding: 20px; border-radius: 8px; background: #fff; position: relative; }
-        .ticket-header { border-bottom: 2px dashed #cbd5e0; padding-bottom: 10px; margin-bottom: 15px; text-align: center; }
-        .info-line { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.95rem; }
-        .label { color: #718096; }
-        .value { font-weight: 600; color: #1a202c; }
         
+        /* --- TICKET BRANDING (Inside Ticket for Printing) --- */
+        .ticket-brand-print { 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 12px; 
+            margin-bottom: 15px; 
+            padding-bottom: 10px; 
+            border-bottom: 1px solid #e2e8f0; 
+        }
+        .ticket-logo-print { width: 45px; height: auto; object-fit: contain; }
+        .ticket-co-name-print { font-size: 1.05rem; font-weight: 800; color: #2c5282; text-transform: uppercase; }
+
+        .ticket-header { border-bottom: 2px dashed #cbd5e0; padding-bottom: 10px; margin-bottom: 15px; text-align: center; }
+        
+        /* Thông tin hành khách - Cập nhật cho Address */
+        .info-line { display: flex; flex-direction: column; margin-bottom: 10px; font-size: 0.95rem; }
+        .info-line .label { color: #718096; font-weight: 500; margin-bottom: 2px;}
+        .info-line .value { font-weight: 600; color: #1a202c; word-break: break-word; } /* Word break cho Address dài */
+
+        /* Kiểu cũ cho các dòng ngắn (Name, ID, DOB, DOI) - Tùy chọn nếu muốn tiết kiệm không gian */
+        .info-line.short { flex-direction: row; justify-content: space-between; align-items: center; }
+        .info-line.short .label { margin-bottom: 0; }
+
         /* Phân loại vé */
-        .status-badge { text-align: center; padding: 10px; border-radius: 5px; font-weight: bold; margin-top: 10px; }
+        .status-badge { text-align: center; padding: 10px; border-radius: 5px; font-weight: bold; margin-top: 15px; }
         .free { background: #c6f6d5; color: #22543d; }
         .student { background: #bee3f8; color: #2a4365; }
         .normal { background: #feebc8; color: #744210; }
@@ -56,6 +76,9 @@
             #ticket-to-print, #ticket-to-print * { visibility: visible; }
             #ticket-to-print { position: absolute; left: 0; top: 0; width: 100%; border: none; }
             .btn-group, .brand-header, .signature { display: none; }
+            
+            /* Tùy chỉnh màu in cho logo và tên công ty trên vé */
+            .ticket-co-name-print { color: black !important; }
         }
     </style>
 </head>
@@ -84,15 +107,26 @@
 
         <div id="result-area">
             <div id="ticket-to-print" class="ticket-box">
+                
+                <div class="ticket-brand-print">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/3/38/Logo_UIT_updated.jpg" alt="Logo UIT Print" class="ticket-logo-print">
+                    <div class="ticket-co-name-print">CÔNG TY TNHH VẬN TẢI UIT</div>
+                </div>
+
                 <div class="ticket-header">
                     <strong style="font-size: 1.2rem;">VÉ XE BUÝT KỸ THUẬT SỐ</strong>
                     <div id="print-time" style="font-size: 0.8rem; color: #a0aec0;"></div>
                 </div>
                 
-                <div class="info-line"><span class="label">Hành khách:</span> <span id="res-name" class="value"></span></div>
-                <div class="info-line"><span class="label">Số CCCD:</span> <span id="res-id" class="value"></span></div>
-                <div class="info-line"><span class="label">Ngày sinh:</span> <span id="res-dob" class="value"></span></div>
-                <div class="info-line"><span class="label">Ngày cấp:</span> <span id="res-doi" class="value"></span></div>
+                <div class="info-line short"><span class="label">Hành khách:</span> <span id="res-name" class="value"></span></div>
+                <div class="info-line short"><span class="label">Số CCCD:</span> <span id="res-id" class="value"></span></div>
+                <div class="info-line short"><span class="label">Ngày sinh:</span> <span id="res-dob" class="value"></span></div>
+                <div class="info-line short"><span class="label">Ngày cấp:</span> <span id="res-doi" class="value"></span></div>
+                
+                <div class="info-line">
+                    <span class="label">Địa chỉ (Address):</span>
+                    <span id="res-address" class="value"></span>
+                </div>
                 
                 <div id="ticket-type" class="status-badge"></div>
             </div>
@@ -129,11 +163,15 @@
                 return;
             }
 
+            // Trích xuất dữ liệu cơ bản
             const data = {
                 id: parts[0],
                 name: parts[2],
                 dob: parts[3],
-                doi: parts[6]
+                doi: parts[6],
+                // GHI CHÚ KỸ THUẬT: Địa chỉ không có sẵn trong các parts[] cơ bản.
+                // Mặc định đặt giá trị N/A.
+                address: "N/A - Hệ thống chưa hỗ trợ lấy địa chỉ từ QR cơ bản"
             };
 
             const birthYear = parseInt(data.dob.substring(4, 8));
@@ -148,10 +186,15 @@
                 ticketInfo = { label: "VÉ NGƯỜI LỚN", price: 10, class: "normal" };
             }
 
+            // Hiển thị lên giao diện
             document.getElementById('res-name').innerText = data.name;
             document.getElementById('res-id').innerText = data.id;
             document.getElementById('res-dob').innerText = formatDate(data.dob);
             document.getElementById('res-doi').innerText = formatDate(data.doi);
+            
+            // CẬP NHẬT: Hiển thị Address
+            document.getElementById('res-address').innerText = data.address;
+            
             document.getElementById('print-time').innerText = "Ngày in: " + new Date().toLocaleString();
             
             const badge = document.getElementById('ticket-type');
