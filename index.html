@@ -9,7 +9,13 @@
         /* Giao diện chung */
         body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background-color: #eef2f3; display: flex; flex-direction: column; align-items: center; padding: 20px; }
         .container { width: 100%; max-width: 600px; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        h1 { color: #1a365d; text-align: center; font-size: 1.5rem; margin-bottom: 20px; }
+        
+        /* --- BRANDING HEADER --- */
+        .brand-header { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #edf2f7; }
+        .brand-logo { width: 50px; height: 50px; object-fit: contain; }
+        .brand-name { font-size: 1.2rem; font-weight: 800; color: #2c5282; text-transform: uppercase; letter-spacing: 1px; }
+        
+        h1 { color: #1a365d; text-align: center; font-size: 1.4rem; margin-bottom: 20px; }
         
         /* Bộ đếm vé */
         .dashboard { display: flex; justify-content: space-around; background: #2d3748; color: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; }
@@ -40,18 +46,27 @@
         .btn-next { background: #718096; color: white; }
         button:hover { opacity: 0.9; }
 
-        /* Cấu hình in - Chỉ in phần vé */
+        /* --- FOOTER SIGNATURE --- */
+        .signature { margin-top: 30px; text-align: center; font-size: 0.85rem; color: #a0aec0; font-weight: 500; }
+        .signature b { color: #4a5568; }
+
+        /* Cấu hình in */
         @media print {
             body * { visibility: hidden; }
             #ticket-to-print, #ticket-to-print * { visibility: visible; }
             #ticket-to-print { position: absolute; left: 0; top: 0; width: 100%; border: none; }
-            .btn-group { display: none; }
+            .btn-group, .brand-header, .signature { display: none; }
         }
     </style>
 </head>
 <body>
 
     <div class="container">
+        <div class="brand-header">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Logo_UIT_v2.png/600px-Logo_UIT_v2.png" alt="Logo UIT" class="brand-logo">
+            <div class="brand-name">Công Ty TNHH Vận tải UIT</div>
+        </div>
+
         <h1>Hệ thống bán vé công cộng</h1>
 
         <div class="dashboard">
@@ -87,16 +102,18 @@
                 <button class="btn-next" onclick="resetScanner()">Quét vé tiếp theo</button>
             </div>
         </div>
+
+        <div class="signature">
+            &lt;/&gt; Phát triển bởi <b>CaoThanhHIen x GeminiAI</b> &lt;/&gt;
+        </div>
     </div>
 
     <script>
         const html5QrCode = new Html5Qrcode("reader");
         const config = { fps: 10, qrbox: { width: 250, height: 250 } };
 
-        // Khởi tạo dữ liệu từ LocalStorage
         let stats = JSON.parse(localStorage.getItem('bus_stats')) || { date: new Date().toLocaleDateString(), count: 0, revenue: 0 };
         
-        // Kiểm tra nếu sang ngày mới thì reset bộ đếm
         if (stats.date !== new Date().toLocaleDateString()) {
             stats = { date: new Date().toLocaleDateString(), count: 0, revenue: 0 };
         }
@@ -112,19 +129,16 @@
                 return;
             }
 
-            // Trích xuất dữ liệu
             const data = {
                 id: parts[0],
                 name: parts[2],
                 dob: parts[3],
-                doi: parts[6] // Ngày cấp CCCD
+                doi: parts[6]
             };
 
-            // Tính tuổi
             const birthYear = parseInt(data.dob.substring(4, 8));
             const age = new Date().getFullYear() - birthYear;
 
-            // Xử lý loại vé và giá
             let ticketInfo = { label: "", price: 0, class: "" };
             if (age >= 60) {
                 ticketInfo = { label: "VÉ MIỄN CHO NGƯỜI GIÀ", price: 0, class: "free" };
@@ -134,7 +148,6 @@
                 ticketInfo = { label: "VÉ NGƯỜI LỚN", price: 10, class: "normal" };
             }
 
-            // Hiển thị lên giao diện
             document.getElementById('res-name').innerText = data.name;
             document.getElementById('res-id').innerText = data.id;
             document.getElementById('res-dob').innerText = formatDate(data.dob);
@@ -145,7 +158,6 @@
             badge.innerText = `${ticketInfo.label} - Giá: ${ticketInfo.price}$`;
             badge.className = "status-badge " + ticketInfo.class;
 
-            // Cập nhật thống kê
             stats.count++;
             stats.revenue += ticketInfo.price;
             saveStats();
