@@ -2,234 +2,163 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ thống bán vé giao thông công cộng - Pro v2.1</title>
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <title>Hệ Thống Bán Vé Xe Buýt Thông Minh</title>
     <style>
-        /* Giao diện chung */
-        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background-color: #eef2f3; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .container { width: 100%; max-width: 600px; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        
-        /* --- BRANDING HEADER (Main App UI) --- */
-        .brand-header { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #edf2f7; }
-        .brand-logo { width: 60px; height: auto; object-fit: contain; }
-        .brand-name { font-size: 1.2rem; font-weight: 800; color: #2c5282; text-transform: uppercase; letter-spacing: 0.5px; }
-        
-        h1 { color: #1a365d; text-align: center; font-size: 1.4rem; margin-top: 0; margin-bottom: 20px; }
-        
-        /* Bộ đếm vé */
-        .dashboard { display: flex; justify-content: space-around; background: #2d3748; color: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; }
-        .stat-item { text-align: center; }
-        .stat-value { font-size: 1.4rem; font-weight: bold; color: #63b3ed; }
-
-        /* Camera */
-        #reader { width: 100%; border-radius: 10px; overflow: hidden; border: 2px dashed #cbd5e0; }
-
-        /* Kết quả & Vé */
-        #result-area { display: none; margin-top: 20px; }
-        .ticket-box { border: 2px solid #2d3748; padding: 20px; border-radius: 8px; background: #fff; position: relative; }
-        
-        /* --- TICKET BRANDING (Inside Ticket for Printing) --- */
-        .ticket-brand-print { 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            gap: 12px; 
-            margin-bottom: 15px; 
-            padding-bottom: 10px; 
-            border-bottom: 1px solid #e2e8f0; 
+        :root {
+            --bus-blue: #1e88e5;
+            --dark-blue: #1565c0;
+            --light-blue: #e3f2fd;
         }
-        .ticket-logo-print { width: 45px; height: auto; object-fit: contain; }
-        .ticket-co-name-print { font-size: 1.05rem; font-weight: 800; color: #2c5282; text-transform: uppercase; }
-
-        .ticket-header { border-bottom: 2px dashed #cbd5e0; padding-bottom: 10px; margin-bottom: 15px; text-align: center; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--light-blue); margin: 0; padding: 20px; display: flex; gap: 20px; }
+        .container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); flex: 1; }
+        h2 { color: var(--dark-blue); border-bottom: 2px solid var(--bus-blue); padding-bottom: 10px; }
         
-        /* Thông tin hành khách - Cập nhật cho Address */
-        .info-line { display: flex; flex-direction: column; margin-bottom: 10px; font-size: 0.95rem; }
-        .info-line .label { color: #718096; font-weight: 500; margin-bottom: 2px;}
-        .info-line .value { font-weight: 600; color: #1a202c; word-break: break-word; } /* Word break cho Address dài */
-
-        /* Kiểu cũ cho các dòng ngắn (Name, ID, DOB, DOI) - Tùy chọn nếu muốn tiết kiệm không gian */
-        .info-line.short { flex-direction: row; justify-content: space-between; align-items: center; }
-        .info-line.short .label { margin-bottom: 0; }
-
-        /* Phân loại vé */
-        .status-badge { text-align: center; padding: 10px; border-radius: 5px; font-weight: bold; margin-top: 15px; }
-        .free { background: #c6f6d5; color: #22543d; }
-        .student { background: #bee3f8; color: #2a4365; }
-        .normal { background: #feebc8; color: #744210; }
+        /* Khu vực quét mã */
+        .scan-section { margin-bottom: 20px; background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 5px solid var(--bus-blue); }
+        input[type="text"] { width: 80%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin-top: 10px; }
+        
+        /* Hiển thị thông tin */
+        .info-display { display: none; margin-top: 20px; padding: 15px; background: #fffde7; border: 1px dashed #fbc02d; border-radius: 8px; }
+        .info-item { margin: 8px 0; font-size: 1.1em; }
+        .price-tag { font-size: 1.5em; color: #d32f2f; font-weight: bold; }
 
         /* Nút bấm */
-        .btn-group { display: flex; gap: 10px; margin-top: 20px; }
-        button { flex: 1; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .btn-print { background: #3182ce; color: white; }
-        .btn-next { background: #718096; color: white; }
-        button:hover { opacity: 0.9; }
+        .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.3s; margin-right: 5px; }
+        .btn-print { background-color: var(--bus-blue); color: white; }
+        .btn-print:hover { background-color: var(--dark-blue); }
+        .btn-manual { background-color: #4caf50; color: white; }
 
-        /* --- FOOTER SIGNATURE --- */
-        .signature { margin-top: 30px; text-align: center; font-size: 0.85rem; color: #a0aec0; font-weight: 500; }
-        .signature b { color: #4a5568; }
-
-        /* Cấu hình in */
-        @media print {
-            body * { visibility: hidden; }
-            #ticket-to-print, #ticket-to-print * { visibility: visible; }
-            #ticket-to-print { position: absolute; left: 0; top: 0; width: 100%; border: none; }
-            .btn-group, .brand-header, .signature { display: none; }
-            
-            /* Tùy chỉnh màu in cho logo và tên công ty trên vé */
-            .ticket-co-name-print { color: black !important; }
-        }
+        /* Quản lý ca */
+        .shift-stats { flex: 0.4; background: var(--dark-blue); color: white; padding: 20px; border-radius: 12px; }
+        table { width: 100%; color: white; border-collapse: collapse; margin-top: 15px; }
+        th, td { text-align: left; padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.2); }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="brand-header">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/3/38/Logo_UIT_updated.jpg" alt="Logo UIT" class="brand-logo">
-            <div class="brand-name">Công Ty TNHH Vận tải UIT</div>
-        </div>
-
-        <h1>Hệ thống bán vé công cộng</h1>
-
-        <div class="dashboard">
-            <div class="stat-item">
-                <div>Tổng vé hôm nay</div>
-                <div id="total-tickets" class="stat-value">0</div>
-            </div>
-            <div class="stat-item">
-                <div>Doanh thu ($)</div>
-                <div id="total-revenue" class="stat-value">0</div>
-            </div>
-        </div>
-
-        <div id="reader"></div>
-
-        <div id="result-area">
-            <div id="ticket-to-print" class="ticket-box">
-                
-                <div class="ticket-brand-print">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/3/38/Logo_UIT_updated.jpg" alt="Logo UIT Print" class="ticket-logo-print">
-                    <div class="ticket-co-name-print">CÔNG TY TNHH VẬN TẢI UIT</div>
-                </div>
-
-                <div class="ticket-header">
-                    <strong style="font-size: 1.2rem;">VÉ XE BUÝT KỸ THUẬT SỐ</strong>
-                    <div id="print-time" style="font-size: 0.8rem; color: #a0aec0;"></div>
-                </div>
-                
-                <div class="info-line short"><span class="label">Hành khách:</span> <span id="res-name" class="value"></span></div>
-                <div class="info-line short"><span class="label">Số CCCD:</span> <span id="res-id" class="value"></span></div>
-                <div class="info-line short"><span class="label">Ngày sinh:</span> <span id="res-dob" class="value"></span></div>
-                <div class="info-line short"><span class="label">Ngày cấp:</span> <span id="res-doi" class="value"></span></div>
-                
-                <div class="info-line">
-                    <span class="label">Địa chỉ (Address):</span>
-                    <span id="res-address" class="value"></span>
-                </div>
-                
-                <div id="ticket-type" class="status-badge"></div>
-            </div>
-
-            <div class="btn-group">
-                <button class="btn-print" onclick="window.print()">In vé cho khách</button>
-                <button class="btn-next" onclick="resetScanner()">Quét vé tiếp theo</button>
-            </div>
-        </div>
-
-        <div class="signature">
-            &lt;/&gt; Phát triển bởi <b>CaoThanhHIen x GeminiAI</b> &lt;/&gt;
-        </div>
+<div class="container">
+    <h2><span id="bus-icon">🚌</span> MÁY BÁN VÉ XE BUÝT</h2>
+    
+    <div class="scan-section">
+        <label><strong>Quét mã QR từ CCCD:</strong></label><br>
+        <input type="text" id="qrInput" placeholder="Dán chuỗi QR tại đây..." oninput="processQR()">
+        <p style="font-size: 0.8em; color: #666;">(Mô phỏng máy quét tự động nhập dữ liệu vào đây)</p>
     </div>
 
-    <script>
-        const html5QrCode = new Html5Qrcode("reader");
-        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+    <div id="passengerInfo" class="info-display">
+        <h3>THÔNG TIN HÀNH KHÁCH</h3>
+        <div class="info-item"><strong>Họ tên:</strong> <span id="resName"></span></div>
+        <div class="info-item"><strong>Giới tính:</strong> <span id="resSex"></span></div>
+        <div class="info-item"><strong>Tuổi:</strong> <span id="resAge"></span></div>
+        <div class="info-item"><strong>Địa chỉ:</strong> <span id="resAddress"></span></div>
+        <hr>
+        <div class="info-item">LOẠI VÉ: <strong id="resType"></strong></div>
+        <div class="price-tag">GIÁ: <span id="resPrice"></span></div>
+        <br>
+        <button class="btn btn-print" onclick="printTicket()">IN VÉ & XÁC NHẬN</button>
+        <button class="btn btn-manual" onclick="resetForm()">HUỶ</button>
+    </div>
 
-        let stats = JSON.parse(localStorage.getItem('bus_stats')) || { date: new Date().toLocaleDateString(), count: 0, revenue: 0 };
+    <div style="margin-top: 30px;">
+        <h3>Phân loại thủ công (Nếu không có CCCD)</h3>
+        <button class="btn btn-manual" onclick="manualTicket('Vé Thường', 6000)">Vé Thường (6k)</button>
+        <button class="btn btn-manual" onclick="manualTicket('Vé Học Sinh', 3000)">Học Sinh (3k)</button>
+        <button class="btn btn-manual" onclick="manualTicket('Miễn Phí', 0)">Miễn Phí</button>
+    </div>
+</div>
+
+<div class="shift-stats">
+    <h3>THỐNG KÊ THEO CA</h3>
+    <p>Tiếp viên: <strong>Nguyễn Văn A</strong></p>
+    <p>Thời gian bắt đầu: 06:00</p>
+    <hr>
+    <table>
+        <tr><td>Tổng hành khách:</td><td id="totalPax">0</td></tr>
+        <tr><td>Doanh thu:</td><td id="totalRev">0 VNĐ</td></tr>
+    </table>
+    <br>
+    <button class="btn" style="background: white; color: var(--dark-blue); width: 100%;" onclick="alert('Đã in báo cáo kết thúc ca!')">KẾT THÚC CA & IN BÁO CÁO</button>
+</div>
+
+<script>
+    let stats = { pax: 0, revenue: 0 };
+    let currentTicket = null;
+
+    function processQR() {
+        const qrString = document.getElementById('qrInput').value;
+        // Định dạng: CCCD||Name|DOB|Sex|Address|DOF||||
+        const parts = qrString.split('|');
         
-        if (stats.date !== new Date().toLocaleDateString()) {
-            stats = { date: new Date().toLocaleDateString(), count: 0, revenue: 0 };
-        }
-        updateDashboard();
-
-        function onScanSuccess(decodedText) {
-            html5QrCode.stop();
-            const parts = decodedText.split('|');
+        if (parts.length >= 6) {
+            const name = parts[2];
+            const dobString = parts[3]; // DDMMYYYY
+            const sex = parts[4];
+            const address = parts[5];
             
-            if (parts.length < 7) {
-                alert("Mã QR không hợp lệ!");
-                resetScanner();
-                return;
+            // Lấy năm sinh (4 ký tự cuối của DOB)
+            const birthYear = parseInt(dobString.substring(4, 8));
+            const currentYear = 2026;
+            const age = currentYear - birthYear;
+
+            let type = "";
+            let price = 0;
+
+            // Logic phân loại của Trò
+            if (age >= 1 && age <= 14) {
+                type = "Vé Trẻ Em";
+                price = 0;
+            } else if (age >= 15 && age <= 28) {
+                type = "Vé Học Sinh";
+                price = 3000;
+            } else if (age >= 29 && age <= 49) {
+                type = "Vé Thường";
+                price = 6000;
+            } else if (age >= 50) {
+                type = "Vé Người Già";
+                price = 0;
             }
 
-            // Trích xuất dữ liệu cơ bản
-            const data = {
-                id: parts[0],
-                name: parts[2],
-                dob: parts[3],
-                doi: parts[6],
-                // GHI CHÚ KỸ THUẬT: Địa chỉ không có sẵn trong các parts[] cơ bản.
-                // Mặc định đặt giá trị N/A.
-                address: "N/A - Hệ thống chưa hỗ trợ lấy địa chỉ từ QR cơ bản"
-            };
-
-            const birthYear = parseInt(data.dob.substring(4, 8));
-            const age = new Date().getFullYear() - birthYear;
-
-            let ticketInfo = { label: "", price: 0, class: "" };
-            if (age >= 60) {
-                ticketInfo = { label: "VÉ MIỄN CHO NGƯỜI GIÀ", price: 0, class: "free" };
-            } else if (age >= 10 && age <= 29) {
-                ticketInfo = { label: "VÉ HỌC SINH", price: 3, class: "student" };
-            } else {
-                ticketInfo = { label: "VÉ NGƯỜI LỚN", price: 10, class: "normal" };
-            }
-
-            // Hiển thị lên giao diện
-            document.getElementById('res-name').innerText = data.name;
-            document.getElementById('res-id').innerText = data.id;
-            document.getElementById('res-dob').innerText = formatDate(data.dob);
-            document.getElementById('res-doi').innerText = formatDate(data.doi);
+            // Hiển thị giao diện
+            document.getElementById('resName').innerText = name;
+            document.getElementById('resSex').innerText = sex;
+            document.getElementById('resAge').innerText = age;
+            document.getElementById('resAddress').innerText = address;
+            document.getElementById('resType').innerText = type;
+            document.getElementById('resPrice').innerText = price.toLocaleString() + " VNĐ";
             
-            // CẬP NHẬT: Hiển thị Address
-            document.getElementById('res-address').innerText = data.address;
-            
-            document.getElementById('print-time').innerText = "Ngày in: " + new Date().toLocaleString();
-            
-            const badge = document.getElementById('ticket-type');
-            badge.innerText = `${ticketInfo.label} - Giá: ${ticketInfo.price}$`;
-            badge.className = "status-badge " + ticketInfo.class;
-
-            stats.count++;
-            stats.revenue += ticketInfo.price;
-            saveStats();
-
-            document.getElementById('reader').style.display = 'none';
-            document.getElementById('result-area').style.display = 'block';
+            currentTicket = { type, price };
+            document.getElementById('passengerInfo').style.display = 'block';
         }
+    }
 
-        function formatDate(str) {
-            return str.replace(/(\d{2})(\d{2})(\d{4})/, "$1/$2/$3");
+    function printTicket() {
+        if (currentTicket) {
+            stats.pax++;
+            stats.revenue += currentTicket.price;
+            updateStats();
+            alert("Đang in vé: " + currentTicket.type + "\nChúc hành khách thượng lộ bình an!");
+            resetForm();
         }
+    }
 
-        function updateDashboard() {
-            document.getElementById('total-tickets').innerText = stats.count;
-            document.getElementById('total-revenue').innerText = stats.revenue;
-        }
+    function manualTicket(type, price) {
+        stats.pax++;
+        stats.revenue += price;
+        updateStats();
+        alert("Đã in vé thủ công: " + type);
+    }
 
-        function saveStats() {
-            localStorage.setItem('bus_stats', JSON.stringify(stats));
-            updateDashboard();
-        }
+    function updateStats() {
+        document.getElementById('totalPax').innerText = stats.pax;
+        document.getElementById('totalRev').innerText = stats.revenue.toLocaleString() + " VNĐ";
+    }
 
-        function resetScanner() {
-            document.getElementById('result-area').style.display = 'none';
-            document.getElementById('reader').style.display = 'block';
-            html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess);
-        }
+    function resetForm() {
+        document.getElementById('qrInput').value = "";
+        document.getElementById('passengerInfo').style.display = 'none';
+        currentTicket = null;
+    }
+</script>
 
-        html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess);
-    </script>
 </body>
 </html>
