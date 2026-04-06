@@ -2,161 +2,169 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Hệ Thống Bán Vé Xe Buýt Thông Minh</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Bán Vé Xe Buýt UIT</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root {
             --bus-blue: #1e88e5;
             --dark-blue: #1565c0;
             --light-blue: #e3f2fd;
         }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--light-blue); margin: 0; padding: 20px; display: flex; gap: 20px; }
-        .container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); flex: 1; }
-        h2 { color: var(--dark-blue); border-bottom: 2px solid var(--bus-blue); padding-bottom: 10px; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--light-blue); margin: 0; padding: 10px; display: flex; flex-direction: column; gap: 15px; }
         
-        /* Khu vực quét mã */
-        .scan-section { margin-bottom: 20px; background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 5px solid var(--bus-blue); }
-        input[type="text"] { width: 80%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin-top: 10px; }
+        .header { background: var(--dark-blue); color: white; padding: 15px; border-radius: 10px; text-align: center; }
+        
+        .main-layout { display: flex; gap: 15px; flex-wrap: wrap; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); flex: 1; min-width: 300px; }
+        
+        /* Khu vực Camera */
+        #reader { width: 100%; border-radius: 8px; overflow: hidden; border: 2px solid var(--bus-blue); }
         
         /* Hiển thị thông tin */
-        .info-display { display: none; margin-top: 20px; padding: 15px; background: #fffde7; border: 1px dashed #fbc02d; border-radius: 8px; }
-        .info-item { margin: 8px 0; font-size: 1.1em; }
-        .price-tag { font-size: 1.5em; color: #d32f2f; font-weight: bold; }
+        .info-box { display: none; margin-top: 15px; padding: 15px; background: #fffde7; border: 2px solid #fbc02d; border-radius: 8px; }
+        .price-tag { font-size: 1.8em; color: #d32f2f; font-weight: bold; margin-top: 10px; }
 
         /* Nút bấm */
-        .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.3s; margin-right: 5px; }
+        .btn { padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; font-size: 1em; }
         .btn-print { background-color: var(--bus-blue); color: white; }
-        .btn-print:hover { background-color: var(--dark-blue); }
-        .btn-manual { background-color: #4caf50; color: white; }
+        .btn-manual { background-color: #4caf50; color: white; margin-bottom: 5px; }
 
-        /* Quản lý ca */
-        .shift-stats { flex: 0.4; background: var(--dark-blue); color: white; padding: 20px; border-radius: 12px; }
-        table { width: 100%; color: white; border-collapse: collapse; margin-top: 15px; }
-        th, td { text-align: left; padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.2); }
+        /* Thống kê ca */
+        .stats-card { background: var(--dark-blue); color: white; padding: 20px; border-radius: 12px; width: 280px; }
+        .editable { border-bottom: 1px dashed white; cursor: pointer; padding: 2px 5px; }
+        .editable:hover { background: rgba(255,255,255,0.1); }
+        
+        table { width: 100%; margin-top: 15px; color: white; }
+        td { padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.2); }
+        .val { text-align: right; font-weight: bold; font-size: 1.2em; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2><span id="bus-icon">🚌</span> MÁY BÁN VÉ XE BUÝT</h2>
-    
-    <div class="scan-section">
-        <label><strong>Quét mã QR từ CCCD:</strong></label><br>
-        <input type="text" id="qrInput" placeholder="Dán chuỗi QR tại đây..." oninput="processQR()">
-        <p style="font-size: 0.8em; color: #666;">(Mô phỏng máy quét tự động nhập dữ liệu vào đây)</p>
-    </div>
-
-    <div id="passengerInfo" class="info-display">
-        <h3>THÔNG TIN HÀNH KHÁCH</h3>
-        <div class="info-item"><strong>Họ tên:</strong> <span id="resName"></span></div>
-        <div class="info-item"><strong>Giới tính:</strong> <span id="resSex"></span></div>
-        <div class="info-item"><strong>Tuổi:</strong> <span id="resAge"></span></div>
-        <div class="info-item"><strong>Địa chỉ:</strong> <span id="resAddress"></span></div>
-        <hr>
-        <div class="info-item">LOẠI VÉ: <strong id="resType"></strong></div>
-        <div class="price-tag">GIÁ: <span id="resPrice"></span></div>
-        <br>
-        <button class="btn btn-print" onclick="printTicket()">IN VÉ & XÁC NHẬN</button>
-        <button class="btn btn-manual" onclick="resetForm()">HUỶ</button>
-    </div>
-
-    <div style="margin-top: 30px;">
-        <h3>Phân loại thủ công (Nếu không có CCCD)</h3>
-        <button class="btn btn-manual" onclick="manualTicket('Vé Thường', 6000)">Vé Thường (6k)</button>
-        <button class="btn btn-manual" onclick="manualTicket('Vé Học Sinh', 3000)">Học Sinh (3k)</button>
-        <button class="btn btn-manual" onclick="manualTicket('Miễn Phí', 0)">Miễn Phí</button>
-    </div>
+<div class="header">
+    <h2 style="margin:0">MÁY QUÉT VÉ THÔNG MINH</h2>
 </div>
 
-<div class="shift-stats">
-    <h3>THỐNG KÊ THEO CA</h3>
-    <p>Tiếp viên: <strong>Nguyễn Văn A</strong></p>
-    <p>Thời gian bắt đầu: 06:00</p>
-    <hr>
-    <table>
-        <tr><td>Tổng hành khách:</td><td id="totalPax">0</td></tr>
-        <tr><td>Doanh thu:</td><td id="totalRev">0 VNĐ</td></tr>
-    </table>
-    <br>
-    <button class="btn" style="background: white; color: var(--dark-blue); width: 100%;" onclick="alert('Đã in báo cáo kết thúc ca!')">KẾT THÚC CA & IN BÁO CÁO</button>
+<div class="main-layout">
+    <div class="card">
+        <h3 style="color: var(--dark-blue); margin-top:0">📷 QUÉT THẺ CCCD</h3>
+        <div id="reader"></div>
+        
+        <div id="passengerInfo" class="info-box">
+            <h3 style="margin-top:0">HÀNH KHÁCH</h3>
+            <div><strong>Họ tên:</strong> <span id="resName"></span></div>
+            <div><strong>Tuổi:</strong> <span id="resAge"></span> (<span id="resType"></span>)</div>
+            <div><strong>Địa chỉ:</strong> <span id="resAddress"></span></div>
+            <div class="price-tag"><span id="resPrice"></span></div>
+            <button class="btn btn-print" onclick="confirmTicket()">XÁC NHẬN IN VÉ</button>
+            <button class="btn" style="background:#ccc" onclick="resetUI()">HỦY</button>
+        </div>
+
+        <div style="margin-top: 20px;">
+            <h4>BÁN VÉ THỦ CÔNG</h4>
+            <button class="btn btn-manual" onclick="addManual('Vé Thường', 6000)">Vé Thường (6k)</button>
+            <button class="btn btn-manual" onclick="addManual('Vé Học Sinh', 3000)">Học Sinh (3k)</button>
+            <button class="btn btn-manual" onclick="addManual('Miễn Phí', 0)">Miễn Phí (0k)</button>
+        </div>
+    </div>
+
+    <div class="stats-card">
+        <h3>QUẢN LÝ CA TRỰC</h3>
+        <p>Tiếp viên: <span id="staffName" class="editable" onclick="editInfo('staffName', 'Tên tiếp viên')">Nguyễn Văn A</span></p>
+        <p>Bắt đầu: <span id="startTime" class="editable" onclick="editInfo('startTime', 'Thời gian bắt đầu')">06:00</span></p>
+        <hr>
+        <table>
+            <tr><td>Số khách:</td><td class="val" id="totalPax">0</td></tr>
+            <tr><td>Doanh thu:</td><td class="val" id="totalRev">0 đ</td></tr>
+        </table>
+        <button class="btn" style="background: white; color: var(--dark-blue); margin-top: 30px;" onclick="location.reload()">KẾT THÚC CA</button>
+    </div>
 </div>
 
 <script>
     let stats = { pax: 0, revenue: 0 };
-    let currentTicket = null;
+    let tempTicket = null;
 
-    function processQR() {
-        const qrString = document.getElementById('qrInput').value;
+    // 1. Khởi tạo máy quét Camera
+    const html5QrCode = new Html5Qrcode("reader");
+    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+    html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess);
+
+    function onScanSuccess(decodedText) {
+        // Tạm dừng quét khi đã nhận diện được
+        html5QrCode.pause();
+        processData(decodedText);
+    }
+
+    // 2. Xử lý dữ liệu từ CCCD
+    function processData(qrString) {
         // Định dạng: CCCD||Name|DOB|Sex|Address|DOF||||
         const parts = qrString.split('|');
+        if (parts.length < 6) {
+            alert("Mã QR không đúng định dạng CCCD!");
+            html5QrCode.resume();
+            return;
+        }
+
+        const name = parts[2];
+        const dob = parts[3]; // DDMMYYYY
+        const address = parts[5];
+        const birthYear = parseInt(dob.substring(4, 8));
+        const age = 2026 - birthYear;
+
+        let type = "Vé Thường";
+        let price = 6000;
+
+        if (age >= 1 && age <= 14) { type = "Trẻ Em"; price = 0; }
+        else if (age >= 15 && age <= 28) { type = "Học Sinh"; price = 3000; }
+        else if (age >= 50) { type = "Người Già"; price = 0; }
+
+        // Cập nhật UI
+        document.getElementById('resName').innerText = name;
+        document.getElementById('resAge').innerText = age;
+        document.getElementById('resType').innerText = type;
+        document.getElementById('resAddress').innerText = address;
+        document.getElementById('resPrice').innerText = price.toLocaleString() + " VNĐ";
         
-        if (parts.length >= 6) {
-            const name = parts[2];
-            const dobString = parts[3]; // DDMMYYYY
-            const sex = parts[4];
-            const address = parts[5];
-            
-            // Lấy năm sinh (4 ký tự cuối của DOB)
-            const birthYear = parseInt(dobString.substring(4, 8));
-            const currentYear = 2026;
-            const age = currentYear - birthYear;
-
-            let type = "";
-            let price = 0;
-
-            // Logic phân loại của Trò
-            if (age >= 1 && age <= 14) {
-                type = "Vé Trẻ Em";
-                price = 0;
-            } else if (age >= 15 && age <= 28) {
-                type = "Vé Học Sinh";
-                price = 3000;
-            } else if (age >= 29 && age <= 49) {
-                type = "Vé Thường";
-                price = 6000;
-            } else if (age >= 50) {
-                type = "Vé Người Già";
-                price = 0;
-            }
-
-            // Hiển thị giao diện
-            document.getElementById('resName').innerText = name;
-            document.getElementById('resSex').innerText = sex;
-            document.getElementById('resAge').innerText = age;
-            document.getElementById('resAddress').innerText = address;
-            document.getElementById('resType').innerText = type;
-            document.getElementById('resPrice').innerText = price.toLocaleString() + " VNĐ";
-            
-            currentTicket = { type, price };
-            document.getElementById('passengerInfo').style.display = 'block';
-        }
+        tempTicket = { price: price };
+        document.getElementById('passengerInfo').style.display = 'block';
     }
 
-    function printTicket() {
-        if (currentTicket) {
+    // 3. Chức năng xác nhận và thống kê
+    function confirmTicket() {
+        if (tempTicket) {
             stats.pax++;
-            stats.revenue += currentTicket.price;
+            stats.revenue += tempTicket.price;
             updateStats();
-            alert("Đang in vé: " + currentTicket.type + "\nChúc hành khách thượng lộ bình an!");
-            resetForm();
+            alert("Đã in vé thành công!");
+            resetUI();
         }
     }
 
-    function manualTicket(type, price) {
+    function addManual(type, price) {
         stats.pax++;
         stats.revenue += price;
         updateStats();
-        alert("Đã in vé thủ công: " + type);
+        alert("Đã in " + type);
     }
 
     function updateStats() {
         document.getElementById('totalPax').innerText = stats.pax;
-        document.getElementById('totalRev').innerText = stats.revenue.toLocaleString() + " VNĐ";
+        document.getElementById('totalRev').innerText = stats.revenue.toLocaleString() + " đ";
     }
 
-    function resetForm() {
-        document.getElementById('qrInput').value = "";
+    function resetUI() {
         document.getElementById('passengerInfo').style.display = 'none';
-        currentTicket = null;
+        tempTicket = null;
+        html5QrCode.resume(); // Tiếp tục quét
+    }
+
+    // 4. Chỉnh sửa thông tin ca trực
+    function editInfo(id, label) {
+        let newVal = prompt("Nhập " + label + ":", document.getElementById(id).innerText);
+        if (newVal) document.getElementById(id).innerText = newVal;
     }
 </script>
 
