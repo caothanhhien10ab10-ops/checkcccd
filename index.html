@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bus Ticketing System - Pro Version</title>
+    <title>Hệ Thống Bán Vé Xe Buýt Thông Minh</title>
     
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -12,54 +12,75 @@
     <style>
         :root { --bus-blue: #1e88e5; --dark-blue: #1565c0; --light-blue: #e3f2fd; }
         body { font-family: 'Segoe UI', sans-serif; background-color: var(--light-blue); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
+        
         .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 500px; margin-bottom: 15px; }
         h2, h3 { color: var(--dark-blue); margin-top: 0; }
-        #reader { width: 100%; border-radius: 8px; border: 2px solid var(--bus-blue); }
+        
+        /* Camera Scanner */
+        #reader { width: 100%; border-radius: 8px; border: 2px solid var(--bus-blue); overflow: hidden; }
+        
+        /* Hiển thị thông tin hành khách quét từ QR */
         .info-box { display: none; padding: 15px; background: #fffde7; border: 2px solid #fbc02d; border-radius: 8px; margin-top: 15px; }
-        .price-tag { font-size: 1.5em; color: #d32f2f; font-weight: bold; }
-        #ticketResult { display: none; text-align: center; border: 2px dashed #4caf50; padding: 15px; margin-top: 15px; background: #f1f8e9; }
-        #qrcode { display: inline-block; margin: 10px 0; }
-        .btn { padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 8px; }
+        .price-tag { font-size: 1.6em; color: #d32f2f; font-weight: bold; margin: 10px 0; }
+
+        /* Vùng hiển thị vé QR để khách quét */
+        #ticketResult { display: none; text-align: center; border: 3px dashed #4caf50; padding: 15px; margin-top: 15px; background: #f1f8e9; border-radius: 10px; }
+        #qrcode { display: inline-block; margin: 10px 0; padding: 10px; background: white; }
+
+        /* Nút bấm */
+        .btn { padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 8px; font-size: 1rem; }
         .btn-blue { background: var(--bus-blue); color: white; }
         .btn-green { background: #4caf50; color: white; }
-        .btn-pdf { background: #e74c3c; color: white; margin-top: 15px; }
+        .btn-manual { background: #607d8b; color: white; margin-top: 5px; }
+        .btn-pdf { background: #e74c3c; color: white; margin-top: 15px; border: 2px solid #c0392b; }
+
         .stats-area { background: var(--dark-blue); color: white; }
-        .editable { border-bottom: 1px dashed white; cursor: pointer; color: #ffeb3b; }
+        .editable { border-bottom: 1px dashed #ffeb3b; cursor: pointer; color: #ffeb3b; font-weight: bold; }
+        
+        .manual-section { border-top: 1px solid #eee; margin-top: 20px; padding-top: 10px; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>🚌 BUS TICKETING STATION</h2>
+    <h2>🚌 BÁN VÉ XE BUÝT (UI)</h2>
+    
     <div id="reader"></div>
     
     <div id="passengerInfo" class="info-box">
-        <h3>PASSENGER INFO</h3>
-        <p><strong>Name:</strong> <span id="resName"></span></p>
-        <p><strong>Ticket Type:</strong> <span id="resType"></span></p>
+        <h3 style="color:#f57f17">HÀNH KHÁCH CCCD</h3>
+        <p><strong>Họ tên:</strong> <span id="resName"></span></p>
+        <p><strong>Phân loại:</strong> <span id="resType"></span></p>
         <div class="price-tag" id="resPrice"></div>
-        <button class="btn btn-green" onclick="confirmAndPrint()">CONFIRM & PRINT QR TICKET</button>
-        <button class="btn" style="background:#ccc" onclick="resetAll()">CANCEL</button>
+        <button class="btn btn-green" onclick="confirmAndPrint()">XÁC NHẬN & IN VÉ QR</button>
+        <button class="btn" style="background:#ccc" onclick="resetUI()">HỦY</button>
     </div>
 
     <div id="ticketResult">
-        <h3 style="color:#2e7d32">VALID BUS TICKET</h3>
+        <h3 style="color:#2e7d32">VÉ XE BUÝT HỢP LỆ</h3>
         <div id="qrcode"></div>
-        <p id="ticketDetails" style="font-size: 0.9em; font-weight: bold;"></p>
-        <button class="btn btn-blue" onclick="resetAll()">SCAN NEXT</button>
+        <p id="ticketDetails" style="font-weight: bold; color: #333;"></p>
+        <button class="btn btn-blue" onclick="resetUI()">QUÉT TIẾP</button>
+    </div>
+
+    <div class="manual-section" id="manualSection">
+        <h3>BÁN VÉ THỦ CÔNG</h3>
+        <button class="btn btn-manual" onclick="issueManual('VÉ THƯỜNG', 6000)">Vé Thường (6.000đ)</button>
+        <button class="btn btn-manual" onclick="issueManual('VÉ HỌC SINH', 3000)">Vé Học Sinh (3.000đ)</button>
+        <button class="btn btn-manual" onclick="issueManual('MIỄN PHÍ', 0)">Vé Miễn Phí (0đ)</button>
     </div>
 </div>
 
 <div class="card stats-area">
-    <h3>SHIFT MANAGEMENT</h3>
-    <p>Staff Name: <span id="staffName" class="editable" onclick="editInfo('staffName')">Nguyen Van A</span></p>
-    <p>Shift Start: <span id="startTime" class="editable" onclick="editInfo('startTime')">06:00 AM</span></p>
+    <h3>QUẢN LÝ CA TRỰC</h3>
+    <p>Tiếp viên: <span id="staffName" class="editable" onclick="editInfo('staffName')">Nguyen Van A</span></p>
+    <p>Bắt đầu: <span id="startTime" class="editable" onclick="editInfo('startTime')">06:00 AM</span></p>
     <hr>
-    <div style="display: flex; justify-content: space-between;">
-        <span>Total Passengers: <strong id="totalPax">0</strong></span>
-        <span>Total Revenue: <strong id="totalRev">0</strong> VND</span>
+    <div style="display: flex; justify-content: space-between; font-size: 1.1em;">
+        <span>Số khách: <strong id="totalPax">0</strong></span>
+        <span>Doanh thu: <strong id="totalRev">0</strong> đ</span>
     </div>
-    <button class="btn btn-pdf" onclick="exportPDF()">EXPORT PDF REPORT 📄</button>
+    <button class="btn btn-pdf" onclick="exportPDF()">XUẤT BÁO CÁO PDF (ENGLISH) 📄</button>
 </div>
 
 <script>
@@ -67,6 +88,7 @@
     let currentData = null;
     const { jsPDF } = window.jspdf;
 
+    // Khởi tạo máy quét
     const html5QrCode = new Html5Qrcode("reader");
     html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, onScanSuccess);
 
@@ -74,94 +96,112 @@
         html5QrCode.pause();
         const parts = decodedText.split('|');
         if (parts.length < 6) {
-            alert("Invalid QR Format!");
+            alert("Mã QR không đúng định dạng CCCD!");
             html5QrCode.resume();
             return;
         }
 
         const name = parts[2];
         const birthYear = parseInt(parts[3].substring(4, 8));
-        const age = 2026 - birthYear;
+        const age = 2026 - birthYear; // Giả định năm hiện tại 2026
 
-        let type = "Standard", price = 6000;
-        if (age >= 1 && age <= 14) { type = "Children"; price = 0; }
-        else if (age >= 15 && age <= 28) { type = "Student"; price = 3000; }
-        else if (age >= 50) { type = "Senior"; price = 0; }
+        let type = "Vé Thường", price = 6000;
+        if (age >= 1 && age <= 14) { type = "Trẻ Em (Free)"; price = 0; }
+        else if (age >= 15 && age <= 28) { type = "Học Sinh"; price = 3000; }
+        else if (age >= 50) { type = "Người Già (Free)"; price = 0; }
 
-        currentData = { name, type, price, time: new Date().toLocaleTimeString() };
+        currentData = { name: name, type: type, price: price };
 
         document.getElementById('resName').innerText = name;
         document.getElementById('resType').innerText = type;
-        document.getElementById('resPrice').innerText = price.toLocaleString() + " VND";
+        document.getElementById('resPrice').innerText = price.toLocaleString() + " VNĐ";
+        
         document.getElementById('passengerInfo').style.display = 'block';
+        document.getElementById('manualSection').style.display = 'none';
     }
 
+    // Xác nhận in vé từ quét CCCD
     function confirmAndPrint() {
+        processTicket(currentData.type, currentData.price, currentData.name);
+    }
+
+    // Bán vé thủ công
+    function issueManual(type, price) {
+        processTicket(type, price, "Guest (Manual)");
+    }
+
+    // Hàm chung để xử lý vé, cộng tiền và tạo QR
+    function processTicket(type, price, name) {
         stats.pax++;
-        stats.revenue += currentData.price;
-        document.getElementById('totalPax').innerText = stats.pax;
-        document.getElementById('totalRev').innerText = stats.revenue.toLocaleString();
+        stats.revenue += price;
+        updateStatsUI();
 
+        // Tạo mã QR cho vé
         document.getElementById('qrcode').innerHTML = "";
-        const qrContent = `BUS-TICKET|${currentData.name}|${currentData.type}|${currentData.price}|${currentData.time}`;
-        new QRCode(document.getElementById("qrcode"), { text: qrContent, width: 150, height: 150 });
+        const timeStr = new Date().toLocaleTimeString();
+        const qrContent = `BUS-TICKET|${name}|${type}|${price}đ|${timeStr}`;
+        
+        new QRCode(document.getElementById("qrcode"), {
+            text: qrContent,
+            width: 160,
+            height: 160
+        });
 
-        document.getElementById('ticketDetails').innerText = `${currentData.type} - ${currentData.time}`;
+        document.getElementById('ticketDetails').innerText = `${type} - ${timeStr}`;
+        
+        // Chuyển đổi giao diện
         document.getElementById('passengerInfo').style.display = 'none';
+        document.getElementById('manualSection').style.display = 'none';
         document.getElementById('ticketResult').style.display = 'block';
     }
 
-    // HÀM XUẤT PDF BẰNG TIẾNG ANH ĐỂ TRÁNH LỖI FONT
+    function updateStatsUI() {
+        document.getElementById('totalPax').innerText = stats.pax;
+        document.getElementById('totalRev').innerText = stats.revenue.toLocaleString();
+    }
+
+    function resetUI() {
+        document.getElementById('passengerInfo').style.display = 'none';
+        document.getElementById('ticketResult').style.display = 'none';
+        document.getElementById('manualSection').style.display = 'block';
+        currentData = null;
+        if (html5QrCode.getState() === 3) html5QrCode.resume();
+    }
+
+    function editInfo(id) {
+        let val = prompt("Nhập thông tin mới:", document.getElementById(id).innerText);
+        if (val) document.getElementById(id).innerText = val;
+    }
+
+    // XUẤT PDF BẰNG TIẾNG ANH (Để tránh lỗi font tiếng Việt)
     function exportPDF() {
         const doc = new jsPDF();
         const staff = document.getElementById('staffName').innerText;
         const start = document.getElementById('startTime').innerText;
-        const date = new Date().toLocaleDateString('en-GB');
+        const now = new Date().toLocaleString('en-US');
 
-        // Header
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(22);
-        doc.setTextColor(30, 136, 229); // Màu xanh Bus Blue
-        doc.text("BUS REVENUE REPORT", 105, 30, { align: 'center' });
+        doc.setFontSize(20);
+        doc.text("SHIFT REVENUE REPORT", 105, 25, { align: 'center' });
 
-        // Content
         doc.setFont("helvetica", "normal");
         doc.setFontSize(12);
-        doc.setTextColor(0, 0, 0);
+        doc.text(`Staff Name: ${staff}`, 20, 45);
+        doc.text(`Shift Started: ${start}`, 20, 55);
+        doc.text(`Report Exported: ${now}`, 20, 65);
         
-        let yPos = 50;
-        doc.text(`Report Date: ${date}`, 20, yPos);
-        doc.text(`Staff Name: ${staff}`, 20, yPos + 10);
-        doc.text(`Shift Started At: ${start}`, 20, yPos + 20);
-        
-        doc.setLineWidth(0.5);
-        doc.line(20, yPos + 30, 190, yPos + 30); // Dấu gạch ngang
+        doc.line(20, 75, 190, 75);
 
         doc.setFont("helvetica", "bold");
-        doc.text("SUMMARY STATISTICS", 20, yPos + 45);
-        
+        doc.text("FINAL STATISTICS", 20, 90);
         doc.setFont("helvetica", "normal");
-        doc.text(`- Total Passengers Served: ${stats.pax}`, 30, yPos + 55);
-        doc.text(`- Total Revenue Collected: ${stats.revenue.toLocaleString()} VND`, 30, yPos + 65);
+        doc.text(`- Total Passengers: ${stats.pax}`, 30, 100);
+        doc.text(`- Total Revenue: ${stats.revenue.toLocaleString()} VND`, 30, 110);
 
         doc.setFontSize(10);
-        doc.setFont("helvetica", "italic");
-        doc.text("This is an automatically generated report from the Smart Bus System.", 105, 120, { align: 'center' });
+        doc.text("--- End of Report ---", 105, 140, { align: 'center' });
 
-        // Save file
-        doc.save(`Revenue_Report_${staff.replace(/\s+/g, '_')}.pdf`);
-    }
-
-    function editInfo(id) {
-        let val = prompt("Enter new information (Please use English or No-Accents):", document.getElementById(id).innerText);
-        if (val) document.getElementById(id).innerText = val;
-    }
-
-    function resetAll() {
-        document.getElementById('passengerInfo').style.display = 'none';
-        document.getElementById('ticketResult').style.display = 'none';
-        currentData = null;
-        if (html5QrCode.getState() === 3) html5QrCode.resume();
+        doc.save(`Bus_Report_${staff.replace(/\s+/g, '_')}.pdf`);
     }
 </script>
 
